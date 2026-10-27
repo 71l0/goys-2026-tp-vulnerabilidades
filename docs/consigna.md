@@ -2,7 +2,8 @@
 
 **Materia:** GOYS — UTN FR La Plata · **Año:** 2026
 **Entrega:** jueves 29/10/2026, en el aula · **Modalidad:** equipos de 4
-**Repo base:** `goys-2026-tp-vulnerabilidades`
+**Repo base:** `goys-2026-tp-vulnerabilidades` · **Fork:** uno por grupo, con el resto
+como colaboradores
 
 ---
 
@@ -158,11 +159,17 @@ instancia con el resto de la cursada.
 
 ## 7. Entrega
 
-1. Pushear la rama `grupo-XX` en tu fork.
-2. Abrir un PR a `rodriguezemautn/goys-2026-tp-vulnerabilidades:main` con título
-   `[Grupo XX] Entrega TP vulnerabilidades`.
-3. Si el PR no está disponible, pegar el enlace del fork en el aula virtual.
-4. **Antes de salir del aula del jueves 29/10.**
+1. Un integrante del grupo forkea el repo y agrega al resto como **colaboradores**
+   del fork. Todos aceptan la invitación. Es **un solo fork por grupo**.
+2. Todos clonan el fork del grupo.
+3. Un integrante crea y sube la rama `grupo-XX`
+   (`git checkout -b grupo-XX && git push -u origin grupo-XX`); el resto la baja con
+   `git fetch origin && git checkout grupo-XX`.
+4. Cada uno commitea con su cuenta y pushea a `origin grupo-XX`.
+5. Abrir **un PR por grupo** a `rodriguezemautn/goys-2026-tp-vulnerabilidades:main`
+   con título `[Grupo XX] Entrega TP vulnerabilidades`.
+6. Si el PR no está disponible, pegar el enlace del fork del grupo en el aula virtual.
+7. **Antes de salir del aula del jueves 29/10.**
 
 ---
 

@@ -28,28 +28,44 @@ priorizar, mitigar, parchear, detectar y contener.
 
 ## 2. Cómo empezar
 
-1. **Forkeá** este repo desde el botón *Fork* de GitHub.
-2. Cloná **tu fork**:
+> **Un solo fork por grupo.** No forkeen uno por integrante: el trabajo quedaría
+> partido en cuatro historias y el PR no incluiría los commits de todos. El fork es
+> del grupo y todos empujan a él con su propia cuenta.
+
+1. **Un integrante del grupo forkea** este repo desde el botón *Fork* de GitHub.
+   Elijan a alguien que esté disponible los dos días: solo el dueño del fork puede
+   agregar colaboradores.
+
+2. Ese integrante agrega al resto como **colaboradores** del fork: en el fork,
+   *Settings → Collaborators → Add people*, con el usuario de GitHub de cada uno.
+   Cada invitado tiene que **aceptar la invitación** (le llega por mail y por
+   `github.com/notifications`). Si no la acepta, el `push` falla con `403`.
+
+3. **Todos clonan el fork del grupo** (la misma URL), no el repo de la cátedra:
 
    ```bash
-   git clone https://github.com/TU-USUARIO/goys-2026-tp-vulnerabilidades.git
+   git clone https://github.com/USUARIO-DEL-FORK/goys-2026-tp-vulnerabilidades.git
    cd goys-2026-tp-vulnerabilidades
    ```
 
-3. Creá una rama por grupo:
+4. Crean la rama del grupo (una sola, en el fork del grupo) y la suben:
 
    ```bash
    git checkout -b grupo-XX
+   git push -u origin grupo-XX
    ```
 
-4. Copiá la plantilla a tu carpeta:
+   Si la rama ya existe porque otro integrante la creó, usen
+   `git fetch origin && git checkout grupo-XX` en vez de `-b`.
+
+5. Copian la plantilla a la carpeta del grupo:
 
    ```bash
    mkdir -p entregables/grupo-XX
    cp entregables/plantilla.md entregables/grupo-XX/entrega.md
    ```
 
-5. Levantá el laboratorio:
+6. Levantan el laboratorio:
 
    ```bash
    cd laboratorio
@@ -57,7 +73,16 @@ priorizar, mitigar, parchear, detectar y contener.
    ```
 
    El primer arranque puede tardar: construye las imágenes de Node y Python.
-   Si ya las tenés, el script espera los healthchecks y corre el inventario.
+   Si ya las tienen, el script espera los healthchecks y corre el inventario.
+
+**Si algo falla al principio:**
+
+- `Permission denied` o `403` al pushear: la invitación de colaborador no fue
+  aceptada, o están pusheando con otra cuenta de GitHub.
+- `repository not found`: están usando la URL del repo base en vez de la del fork
+  del grupo.
+- `Updates were rejected`: hagan `git pull --rebase origin grupo-XX` y vuelvan a
+  pushear.
 
 ---
 
@@ -86,12 +111,13 @@ La guía del laboratorio de 2 horas está en
 
 | Fecha | Qué |
 |---|---|
-| **Martes 27/10** | Fork, clone, lectura de fuentes, primer arranque del lab |
+| **Martes 27/10** | Fork del grupo, colaboradores, clone, lectura y primer arranque |
 | **Miércoles 28/10** | Detección asincrónica + borrador del informe |
 | **Jueves 29/10, en aula** | Taller completo, comité de crisis, cierre y push/PR |
 
-La entrega se considera hecha cuando el repo de tu fork está **pusheado** y el PR
-está abierto (o el enlace del fork está en el aula virtual) antes de salir del aula.
+La entrega se considera hecha cuando la rama `grupo-XX` del fork del grupo está
+**pusheada** y el PR está abierto (o el enlace del fork está en el aula virtual)
+antes de salir del aula.
 
 ---
 
@@ -127,7 +153,7 @@ Preguntas del comité: [`docs/comite.md`](docs/comite.md).
 
 ## 7. Cómo entregar
 
-1. Commiteá y pusheá en tu fork:
+1. Cada integrante commitea y pushea en **el fork del grupo**:
 
    ```bash
    git add entregables/grupo-XX
@@ -135,11 +161,13 @@ Preguntas del comité: [`docs/comite.md`](docs/comite.md).
    git push origin grupo-XX
    ```
 
-2. Abrí un **Pull Request** desde tu fork hacia
+   No hace falta que cada uno abra un PR: alcanza con **un PR por grupo**.
+
+2. Abrí **un Pull Request** desde el fork del grupo hacia
    `rodriguezemautn/goys-2026-tp-vulnerabilidades`, rama `main`.
    Título sugerido: `[Grupo XX] Entrega TP vulnerabilidades`.
 
-3. Si el PR no está disponible, pegá el enlace de tu fork en el aula virtual.
+3. Si el PR no está disponible, pegá el enlace del fork del grupo en el aula virtual.
 
 ---
 

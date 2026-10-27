@@ -4,10 +4,12 @@ Marcá cada ítem antes de abrir el PR.
 
 ## Repo y proceso
 
-- [ ] Forkeé el repo y cloné **mi fork**.
-- [ ] Creé la rama `grupo-XX`.
+- [ ] El grupo tiene **un solo fork** del repo base (no uno por integrante).
+- [ ] El dueño del fork agregó al resto como **colaboradores** y todos aceptaron.
+- [ ] Cloné el **fork del grupo** y creé/uso la rama `grupo-XX`.
 - [ ] Copié `entregables/plantilla.md` a `entregables/grupo-XX/entrega.md`.
-- [ ] Todos los integrantes aparecen con nombre y rol.
+- [ ] Todos los integrantes aparecen con nombre, usuario de GitHub y rol.
+- [ ] Cada integrante tiene al menos un commit con su usuario de GitHub.
 - [ ] Los commits son convencionales y por aporte.
 - [ ] El repo no contiene claves, tokens, `.env` ni `secret.yml`.
 
@@ -38,8 +40,9 @@ Marcá cada ítem antes de abrir el PR.
 
 ## Entrega
 
-- [ ] `git push origin grupo-XX`.
-- [ ] PR abierto a `rodriguezemautn/goys-2026-tp-vulnerabilidades:main`.
+- [ ] `git push origin grupo-XX` al fork del grupo.
+- [ ] PR abierto desde el fork del grupo a
+      `rodriguezemautn/goys-2026-tp-vulnerabilidades:main`.
 - [ ] Título del PR: `[Grupo XX] Entrega TP vulnerabilidades`.
-- [ ] Enlace del PR (o del fork) pegado en el aula virtual.
+- [ ] Enlace del PR (o del fork del grupo) pegado en el aula virtual.
 - [ ] Entregado **antes de salir del aula del jueves 29/10**.

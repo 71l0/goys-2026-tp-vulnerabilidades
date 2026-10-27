@@ -66,5 +66,5 @@ del jueves 29/10.
 - Un entregable sin **antes/después** o sin **reversión** no puede superar “competente”
   en mitigación/parche.
 - Un comité que responde “parchamos todo” sin orden ni plazos no supera “inicial”.
-- La entrega es **en el repo** (fork + PR o enlace). Un archivo fuera del repo no
-  cuenta como entregado.
+- La entrega es **en el repo** (fork del grupo + PR o enlace). Un archivo fuera del
+  repo no cuenta como entregado.
