@@ -16,11 +16,14 @@ entregables/
 
 ```bash
 mkdir -p entregables/grupo-XX
-cp entregables/plantilla.md entregables/grupo-XX/entrega.md
+cp entregables/plantilla.md  entregables/grupo-XX/entrega.md
+cp entregables/deteccion.md  entregables/grupo-XX/deteccion.md
+cp entregables/informe.md    entregables/grupo-XX/informe.md
 ```
 
 - **`entrega.md`:** inventario, matriz, cambios/parche, contención y conclusión.
-  Se completa en clase.
+  Se completa en clase. La sección 4 puede ser un resumen; el detalle va en
+  `deteccion.md`.
 - **`deteccion.md`:** análisis de `laboratorio/logs/audit.log`. Se entrega antes de
   la clase del jueves 29/10.
 - **`informe.md`:** informe individual de 2–3 páginas. Se entrega al finalizar la
