@@ -1,0 +1,21 @@
+# Credenciales (nunca versionar)
+secret.yml
+**/secret.yml
+.env
+**/.env
+
+# Backups binarios y artefactos de RouterOS / Docker
+*.backup
+*.tar
+*.tar.gz
+
+# Dependencias y cachés
+node_modules/
+__pycache__/
+*.pyc
+
+# Editores / OS
+.DS_Store
+*.swp
+*.swo
+*~

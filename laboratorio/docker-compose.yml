@@ -1,0 +1,105 @@
+name: goys-vuln-lab
+
+# Laboratorio defensivo de gestión de vulnerabilidades.
+# Red interna sin salida a Internet, servicios sin privilegios y filesystem read-only.
+# No se publican puertos: todo se opera con `docker compose exec`.
+
+services:
+  php-lab:
+    image: php:${PHP_TAG:-8.3.35-apache}
+    container_name: php-lab
+    hostname: web01
+    volumes:
+      - ./php/public:/var/www/html:ro
+      - ./php/php.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+    tmpfs:
+      - /tmp
+      - /var/run/apache2
+      - /var/lock/apache2
+      - /var/log/apache2
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - NET_BIND_SERVICE
+    mem_limit: 256m
+    pids_limit: 100
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "php", "-r", "$$s=@fsockopen('127.0.0.1',80); exit($$s?0:1);"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - labnet
+
+  node-lab:
+    image: goys-vuln-lab-node:${NODE_TAG:-22.23.3-bookworm-slim}
+    build:
+      context: ./node
+      args:
+        NODE_TAG: ${NODE_TAG:-22.23.3-bookworm-slim}
+    container_name: node-lab
+    hostname: api01
+    working_dir: /app
+    command: ["node", "server.js"]
+    user: node
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    pids_limit: 100
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - labnet
+
+  py-lab:
+    image: goys-vuln-lab-py:${BROTLI_VERSION:-1.0.9}
+    build:
+      context: ./python
+      args:
+        BROTLI_VERSION: ${BROTLI_VERSION:-1.0.9}
+    container_name: py-lab
+    hostname: svc01
+    working_dir: /app
+    command: ["python", "app.py"]
+    user: nobody
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 128m
+    pids_limit: 50
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - labnet
+
+networks:
+  labnet:
+    internal: true
