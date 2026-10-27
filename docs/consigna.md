@@ -151,6 +151,9 @@ docker compose --env-file versions.env down -v
 Detalle en [`rubrica.md`](rubrica.md). La nota final de la materia integra esta
 instancia con el resto de la cursada.
 
+- Cuestionario de entrada: [`cuestionario-entrada.md`](cuestionario-entrada.md).
+- Preguntas del comité: [`comite.md`](comite.md).
+
 ---
 
 ## 7. Entrega

@@ -120,6 +120,8 @@ está abierto (o el enlace del fork está en el aula virtual) antes de salir del
 | Informe individual | 30% | Transferencia a un caso nuevo |
 
 Detalle y niveles en [`docs/rubrica.md`](docs/rubrica.md).
+Cuestionario: [`docs/cuestionario-entrada.md`](docs/cuestionario-entrada.md).
+Preguntas del comité: [`docs/comite.md`](docs/comite.md).
 
 ---
 
