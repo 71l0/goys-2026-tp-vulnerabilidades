@@ -155,17 +155,21 @@ SIN SALIDA URLError
 
 ## 6. Conclusión (5 líneas)
 
-_¿Qué harían distinto en las primeras 2 horas?_
+1. Automatizar desde el minuto cero la ejecución conjunta de `./scripts/inventario.sh` y `./scripts/verificar-contencion.sh` para tener en un único reporte tanto las versiones expuestas como el estado real de aislamiento de red.
+2. Aplicar inmediatamente la mitigación de configuración en PHP (`session.upload_progress.enabled = 0`) y el bloqueo preventivo de `Content-Encoding: br` en los servicios que no lo necesiten antes de iniciar la recompilación de imágenes.
+3. Cruzar en paralelo los eventos de creación de procesos (`audit.log`) con el estado de los contenedores en vivo (`docker top`) para descartar actividad persistente en `/tmp` antes de reiniciar servicios.
+4. Definir desde el inicio un criterio único de reversión documentado (`versions.env` y control de cambios en `php.ini`) con pruebas funcionales mínimas sobre cada endpoint tras el parcheo.
+5. Establecer un parte de comunicación breve cada 30 minutos para gerencia informando qué activos están contenidos, cuáles ya recibieron parche y cuál es el riesgo residual.
 
 ---
 
 ## 7. Checklist antes de entregar
 
-- [ ] El laboratorio arrancó y los 3 servicios quedaron `healthy`.
-- [ ] Inventario con evidencia (versión, SAPI, configuración).
-- [ ] Matriz con decisión y plazo.
-- [ ] Parche aplicado y verificado; reversión documentada.
-- [ ] Al menos 3 controles de contención probados.
+- [x] El laboratorio arrancó y los 3 servicios quedaron `healthy`.
+- [x] Inventario con evidencia (versión, SAPI, configuración).
+- [x] Matriz con decisión y plazo.
+- [x] Parche aplicado y verificado; reversión documentada.
+- [x] Al menos 3 controles de contención probados.
 - [ ] `deteccion.md` completo.
 - [ ] `informe.md` individual completo.
 - [ ] Sin claves, tokens ni placeholders.
