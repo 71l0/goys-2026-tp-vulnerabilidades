@@ -121,6 +121,8 @@ negativo podría tener._
 | Límites de memoria/PIDs | `mem_limit: 256m` y `pids_limit: 100` (`php-lab`, `node-lab`); `mem_limit: 128m` y `pids_limit: 50` (`py-lab`) | `docker compose config` (`268435456` / `134217728` bytes y límites de PIDs) | Sí | Evita que una condición OOM repetida (PHP2Shell), una bomba de descompresión Brotli o un fork bomb agoten los recursos del host. **Riesgo residual:** un ataque sostenido puede provocar denegación de servicio dentro del propio contenedor afectado. |
 | Rechazo de Brotli innecesario | Validación de `Content-Encoding: br` en `node/server.js` (`/decode`) y `python/app.py` | No aplicado por defecto en el laboratorio (los servicios aceptan y descomprimen `br`) | No (control adicional propuesto) | Bloquear o rechazar `Content-Encoding: br` en el borde o en la app cuando no es indispensable elimina la superficie de CVE-2026-111497 sin esperar el parche del runtime. |
 
+(La evidencia de la ejecución se encuentra en [`/capturas/tramo_4_contencion`](./capturas/tramo_4_contencion/))
+
 **Prueba de salida a Internet:** los tres servicios (`php-lab`, `node-lab` y `py-lab`) arrojaron `SIN SALIDA` al intentar conectar hacia `example.com`, confirmando que la red `labnet` (`internal: true`) bloquea las conexiones salientes.
 
 **Evidencia (outputs):**
