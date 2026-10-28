@@ -112,16 +112,44 @@ negativo podría tener._
 
 ## 5. Contención
 
-| Control | Configuración | Evidencia | ¿Funciona? |
-|---------|---------------|-----------|:----------:|
-| Red sin salida | `internal: true` | | |
-| Usuario sin privilegios | | | |
-| Filesystem read-only | | | |
-| Capabilities mínimas | | | |
-| Límites de memoria/PIDs | | | |
-| Rechazo de Brotli innecesario | | | |
+| Control | Configuración | Evidencia | ¿Funciona? | Daño que evita y riesgo residual |
+|---------|---------------|-----------|:----------:|----------------------------------|
+| Red sin salida | `networks.labnet.internal: true` | `docker compose config` y `./scripts/verificar-contencion.sh` (`SIN SALIDA` en los 3 contenedores) | Sí | Impide que una RCE descargue una segunda etapa (`curl`/`wget`) o exfiltre datos hacia Internet. **Riesgo residual:** permite movimiento lateral entre `php-lab`, `node-lab` y `py-lab` dentro de `labnet`. |
+| Usuario sin privilegios | `user: node` (`node-lab`), `user: nobody` (`py-lab`), workers `www-data` en Apache (`php-lab`) | `docker compose config` y árbol de procesos con `docker top` | Sí | Evita que la ejecución de código ocurra directamente como `root` en `node-lab` y `py-lab`. **Riesgo residual:** en `php-lab` el proceso maestro de Apache inicia como `root` para hacer bind al puerto 80. |
+| Filesystem read-only | `read_only: true` + `tmpfs` (`/tmp`, `/var/run/apache2`, `/var/lock/apache2`, `/var/log/apache2`) y volúmenes `:ro` | `docker compose config` (`read_only: true` en los 3 servicios y montajes `:ro`) | Sí | Impide modificar el código de la aplicación, alterar binarios del sistema o dejar persistencia en disco. **Riesgo residual:** un atacante aún puede escribir artefactos temporales en memoria dentro de `/tmp` (`tmpfs`) mientras el contenedor no se reinicie. |
+| Capabilities mínimas | `cap_drop: ALL` y `security_opt: no-new-privileges:true` (en `php-lab` solo se agregan `CHOWN`, `SETUID`, `SETGID`, `DAC_OVERRIDE`, `NET_BIND_SERVICE`) | `docker compose config` | Sí | Bloquea escalada de privilegios por binarios SUID, carga de módulos o manipulación de red del contenedor. **Riesgo residual:** `php-lab` conserva `DAC_OVERRIDE` y `SETUID`/`SETGID` requeridas por el proceso maestro de Apache. |
+| Límites de memoria/PIDs | `mem_limit: 256m` y `pids_limit: 100` (`php-lab`, `node-lab`); `mem_limit: 128m` y `pids_limit: 50` (`py-lab`) | `docker compose config` (`268435456` / `134217728` bytes y límites de PIDs) | Sí | Evita que una condición OOM repetida (PHP2Shell), una bomba de descompresión Brotli o un fork bomb agoten los recursos del host. **Riesgo residual:** un ataque sostenido puede provocar denegación de servicio dentro del propio contenedor afectado. |
+| Rechazo de Brotli innecesario | Validación de `Content-Encoding: br` en `node/server.js` (`/decode`) y `python/app.py` | No aplicado por defecto en el laboratorio (los servicios aceptan y descomprimen `br`) | No (control adicional propuesto) | Bloquear o rechazar `Content-Encoding: br` en el borde o en la app cuando no es indispensable elimina la superficie de CVE-2026-111497 sin esperar el parche del runtime. |
 
-**Prueba de salida a Internet:** _resultado en los tres servicios._
+**Prueba de salida a Internet:** los tres servicios (`php-lab`, `node-lab` y `py-lab`) arrojaron `SIN SALIDA` al intentar conectar hacia `example.com`, confirmando que la red `labnet` (`internal: true`) bloquea las conexiones salientes.
+
+**Evidencia (outputs):**
+
+Ejecución de `./scripts/verificar-contencion.sh`:
+```
+$ ./scripts/verificar-contencion.sh
+== Controles declarados en el compose ==
+    cap_drop:
+    mem_limit: "268435456"
+    read_only: true
+    cap_drop:
+    mem_limit: "268435456"
+    read_only: true
+        read_only: true
+        read_only: true
+    cap_drop:
+    mem_limit: "134217728"
+    read_only: true
+    internal: true
+
+== Prueba de salida a Internet (debe fallar) ==
+-- PHP:
+SIN SALIDA
+-- Node.js:
+SIN SALIDA TypeError
+-- Python:
+SIN SALIDA URLError
+```
 
 ---
 
