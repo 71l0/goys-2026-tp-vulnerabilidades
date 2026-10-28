@@ -43,11 +43,11 @@ En consecuencia, los tres servicios se consideran no expuestos directamente a In
 
 | Activo | CVSS | Explotación real | Exposición | Criticidad | Decisión y plazo |
 |--------|:----:|:----------------:|:----------:|:----------:|------------------|
-| | | | | | |
-| | | | | | |
-| | | | | | |
+| Portal PHP | Alta (RCE vía `session.upload_progress`) | Sí — técnica conocida en PHP < 8.3.36 | No — red interna del laboratorio | Alta | Mitigar ya (`session.upload_progress.enabled = 0`) + parchear a 8.3.36 en el día |
+| API Node.js | Media (brotli / runtime) | No confirmada | No — red interna del laboratorio | Media | Parchear a Node 22.23.4 en el día; revisar dependencias brotli |
+| Servicio Python | Media (brotli 1.0.9 → 1.2.1) | No confirmada | No — red interna del laboratorio | Media | Actualizar a Python con brotli 1.2.1 en el día |
 
-**Justificación:** _¿por qué ese orden? ¿qué evidencia nueva cambiaría la decisión?_
+**Justificación:** el Portal PHP es el activo más crítico porque `session.upload_progress.enabled=1` es explotable para RCE en versiones anteriores a 8.3.36, y el inventario confirmó que el valor estaba en `1`. Se prioriza la mitigación inmediata (deshabilitar el progreso de subida) y el parche de versión el mismo día. Node y Python se tratan con menor prioridad por no tener explotación real confirmada en el entorno y por estar en red aislada, pero se parchean igual para reducir superficie. La evidencia nueva que cambiaría la decisión sería confirmar exposición pública de alguno de los servicios (puertos publicados en `docker-compose.yml`), lo que subiría la criticidad de todos.
 
 ---
 
@@ -55,12 +55,38 @@ En consecuencia, los tres servicios se consideran no expuestos directamente a In
 
 | Fecha/hora | Activo | Cambio | Antes | Después | Reversión |
 |------------|--------|--------|-------|---------|-----------|
-| | | | | | |
-| | | | | | |
+| 29/10/2026 — Fase 4 | Portal PHP | Mitigación `session.upload_progress.enabled` | `1` | `0` | `git checkout -- laboratorio/php/php.ini` y `docker compose restart php-lab` |
+| 29/10/2026 — Fase 4 | Portal PHP | Parche de versión | PHP 8.3.35 | PHP 8.3.36 | Volver a tag anterior con `PHP_TAG` en `versions.env` y `docker compose up` |
+| 29/10/2026 — Fase 4 | API Node.js | Parche de versión | Node v22.23.3 | Node v22.23.4 | Volver a tag anterior con `NODE_TAG` en `versions.env` |
+| 29/10/2026 — Fase 4 | Servicio Python | Parche de versión (brotli) | brotli 1.0.9 | brotli 1.2.1 | Volver a tag anterior de imagen Python |
 
-**Prueba funcional mínima:** _¿qué verificaron para saber que la app sigue viva?_
+**Prueba funcional mínima:** `docker compose exec -T php-lab php -r 'echo ini_get("session.upload_progress.enabled");'` devolvió `0`, y `docker compose ps` muestra `php-lab`, `node-lab` y `py-lab` en estado `healthy`/`running`.
 
-**Qué no se pudo probar:** _declararlo explícitamente._
+**Qué no se pudo probar:** Acceso real desde red externa (no hay salida a Internet ni proxy público en el laboratorio isolado), por lo que no se validó exposición a Internet ni ataque activo contra el puerto publicado.
+
+**Evidencia (outputs):**
+
+Mitigación PHP:
+```
+$ docker compose restart php-lab
+$ docker compose exec -T php-lab php -r 'echo ini_get("session.upload_progress.enabled");'
+0
+```
+
+Parche (`./scripts/parchear.sh`):
+```
+== Versiones después del parche ==
+=== PHP ===
+PHP 8.3.36 (cli) (built: Oct 28 2026 01:26:59) (NTS)
+session.upload_progress.enabled=0
+=== Node.js ===
+v22.23.4 / brotli 1.1.0
+-- dependencias con brotli:
+(sin paquete brotli externo: lo aporta el runtime)
+=== Python ===
+python 3.11.18
+brotli 1.2.1
+```
 
 ---
 
