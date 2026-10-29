@@ -48,7 +48,7 @@ Symfony, WHMCS) son **targets de demostración**, no sitios atacados.
 | Tipo | Out-of-bounds write en el decoder Brotli (CWE-787 + CWE-252) |
 | Afecta | Brotli **1.0.3–1.2.0**; Node.js 22/24/26, Bun, Python, .NET, Envoy, Istio |
 | Corregido | Brotli **1.0.10 / 1.1.1 / 1.2.1**; Node **22.23.4 / 24.22.1 / 26.12.1** |
-| Explotación | **Sin confirmación en el mundo real** al 27/10; RCE en laboratorio |
+| Explotación | **Real, confirmada**; CISA KEV desde el 27/10/2026 (vence 10/11) |
 
 **Cómo llega al decoder.** No hace falta importar Brotli: `fetch()` descomprime
 respuestas automáticamente; Express 5 / body-parser 2 descomprimen request bodies
@@ -58,11 +58,38 @@ Brotli instalado; .NET si se habilita la decompresión.
 **Hallazgo.** Lo reportó **OpenAI Codex Security** (Khai Tran y Sylvie Mayer). El root
 cause se había corregido en Brotli en febrero de 2026, pero no se reconoció como
 vulnerabilidad. Imperva demostró RCE en Node.js 24.22.0 Linux arm64; 24.22.1 rechaza
-la misma entrada. No hay explotación maliciosa confirmada ni KEV al 27/10.
+la misma entrada.
+
+**Explotación real al 29/10.** CISA sumó CVE-2026-111497 al **KEV el 27/10** (vence
+10/11). Previdian registró un intento el 27/10 y ELLIO detectó el 26/10 un request
+malicioso contra Node.js 24.22.0 x86-64: el exploit público que usaron estaba roto en
+la última etapa (0 shells en 50 pruebas), pero ELLIO logró RCE en cuatro setups y los
+fallos igual crashean el proceso (DoS no autenticado). KEV confirma explotación activa,
+no compromiso masivo exitoso.
 
 ---
 
-## 3. IA agéntica: qué cambió
+## 3. Cadena PHP2Shell + Fragnesia → root
+
+**CVE-2026-46300 “Fragnesia”** es una LPE del kernel Linux (CVSS 7.8, clase Dirty Frag)
+en el subsistema XFRM ESP-in-TCP: un fragmento compartido se desencripta *in place* y
+permite escribir sobre page cache. Afecta kernels anteriores al 13/05/2026. CISA lo
+agregó al KEV el 28/10 (vence 31/10, con forensic triage).
+
+Dream documentó una campaña que encadenó un exploit **custom** de PHP2Shell con
+Fragnesia: el PHP corría como `nobody` y la LPE escribió `/etc/pam.d/su` con
+`pam_permit.so` para llegar a root sin password. La cadena completa tardó **menos de
+15 minutos** y rooteó **25 servidores** en EE. UU., Japón, Taiwán y Corea del Sur; tres
+en un entorno afiliado al gobierno de EE. UU. Después: credenciales y enumeración de
+Active Directory.
+
+**Caveat de atribución:** Dream no nombró al vendor de los firewalls. Unit 42 confirmó
+por separado, el 29/10, explotación contra management interfaces de **PAN-OS** expuestas
+a Internet. No son la misma afirmación.
+
+---
+
+## 4. IA agéntica: qué cambió
 
 - **Descubrimiento:** Calif usó GPT‑5.6 Sol; Wiz usó Wiz Atlas + Gemini 4 Argon +
   GPT‑5.6 Sol; OpenAI coordinó *Patch the Planet*. Tres equipos llegaron a las mismas
@@ -80,17 +107,21 @@ la misma entrada. No hay explotación maliciosa confirmada ni KEV al 27/10.
 
 ---
 
-## 4. Fuentes
+## 5. Fuentes
 
 - PHP: https://www.php.net/archive/2026.php#2026-10-21-5
 - Node.js: https://nodejs.org/en/blog/vulnerability/october-2026-security-releases
 - CISA: https://www.cisa.gov/news-events/alerts/2026/10/21/critical-vulnerabilities-php-require-immediate-patching
 - CISA KEV: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- CISA KEV 28/10 (Fragnesia): https://www.cisa.gov/news-events/alerts/2026/10/28/cisa-adds-two-known-exploited-vulnerabilities-catalog
+- NVD Fragnesia: https://nvd.nist.gov/vuln/detail/CVE-2026-46300
 - NCSC-NL: https://github.com/NCSC-NL/php2shell
 - CERT-EU: https://www.cert.europa.eu/publications/security-advisories/2026-018/
 - Wiz: https://www.wiz.io/blog/php2shell-php-rce
 - Calif: https://calif.io/php2shell/
 - OpenAI: https://openai.com/index/coordinated-disclosure-of-critical-vulnerabilities/
 - Unit 42: https://unit42.paloaltonetworks.com/cve-2026-109618-cve-2026-109619/
+- Dream / SOCtember: https://www.soctember.com/threat-intel/dream-php2shell-fragnesia-chain-roots-25-firewalls-us-government-active-directory
+- Sophos — Node2Shell: https://www.sophos.com/en-us/blog/node2shell-cve-2026-111497-in-active-exploitation
 - Imperva: https://www.imperva.com/blog/node2shell-from-brotli-data-to-remote-code-execution/
 - Delft: https://php2shell.delftintellab.com/

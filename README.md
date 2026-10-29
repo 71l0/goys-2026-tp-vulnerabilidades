@@ -1,7 +1,7 @@
 # TP — Gestión de vulnerabilidades: PHP2Shell y Node2Shell
 
 **Materia:** Gestión Operativa y Seguridad en Redes (GOYS) — UTN FR La Plata
-**Año:** 2026 · **Entrega:** jueves 29/10/2026, en el aula
+**Año:** 2026 · **Entrega:** jueves 29/10/2026, en el aula · **Actualizado:** 29/10/2026
 **Modalidad:** equipos de 4 · **Entorno:** Docker local
 
 > **Este TP es defensivo.** No se desarrollan ni ejecutan exploits. Se trabaja sobre

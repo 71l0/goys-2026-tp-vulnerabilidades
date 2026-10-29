@@ -14,8 +14,11 @@ En octubre de 2026 se divulgaron dos familias de vulnerabilidades críticas:
 - **PHP2Shell** (CVE-2026-109618 y CVE-2026-109619): RCE sin autenticación en el
   núcleo de PHP, con explotación real confirmada y entrada en CISA KEV.
 - **Node2Shell / HTTP2Shell** (CVE-2026-111497): out-of-bounds write en el decoder
-  Brotli, con RCE demostrado en laboratorio y un ecosistema enorme (Node.js, Bun,
-  Python, .NET, Envoy, Istio y más).
+  Brotli, con RCE demostrado en laboratorio, explotación real confirmada y entrada en
+  CISA KEV.
+
+La cadena **PHP2Shell + Fragnesia** (CVE-2026-46300, LPE del kernel Linux) también está
+documentada en el contexto: llegar a root no se corrige solo con el parche de PHP.
 
 El TP simula la respuesta de un equipo de operaciones: **no se explota nada**, se
 gestiona el riesgo. El laboratorio tiene tres servicios vulnerables en una red

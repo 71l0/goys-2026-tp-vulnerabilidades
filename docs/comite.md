@@ -10,8 +10,9 @@
 1. ¿Parcheamos en caliente un servicio de facturación que no tiene entorno de pruebas?
 2. El hosting no puede actualizar PHP hasta el viernes. ¿Qué compensamos y cómo lo
    verificamos?
-3. Node2Shell todavía no se explota en la práctica. ¿Justifica una ventana de cambio
-   de emergencia? ¿Con qué evidencia cambiarías la decisión?
+3. Node2Shell está en KEV pero el exploit público visto en el mundo real falla.
+   ¿Justifica una ventana de cambio de emergencia? ¿Con qué evidencia cambiarías la
+   decisión?
 4. ¿Qué le decimos a clientes y cuándo, sin dar detalles que ayuden a un atacante?
 5. Si el atacante usa un agente para post-explotación, ¿qué control nuestro sigue
    funcionando cuando el perímetro ya cayó?
