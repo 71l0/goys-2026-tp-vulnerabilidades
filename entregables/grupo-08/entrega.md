@@ -183,6 +183,6 @@ SIN SALIDA URLError
 - [x] `deteccion.md` completo.
 - [x] `informe.md` individual completo.
 - [x] Sin claves, tokens ni placeholders.
-- [ ] Repo pusheado y PR abierto.
+- [x] Repo pusheado y PR abierto.
 
 Checklist completa: [`../docs/checklist-entrega.md`](../docs/checklist-entrega.md).
