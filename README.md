@@ -84,6 +84,42 @@ priorizar, mitigar, parchear, detectar y contener.
 - `Updates were rejected`: hagan `git pull --rebase origin grupo-XX` y vuelvan a
   pushear.
 
+### Actualizar el fork con upstream
+
+El repo de la cátedra puede recibir correcciones después de que forkeaste. Tu fork
+**no se actualiza solo**. Si el docente avisa que hay cambios, sincronizá:
+
+**Opción simple (GitHub):**
+
+1. En tu fork, botón **Sync fork → Update branch** para actualizar `main`.
+2. Traé ese `main` a la rama del grupo:
+
+   ```bash
+   git fetch origin
+   git checkout grupo-XX
+   git merge origin/main
+   git push origin grupo-XX
+   ```
+
+**Opción CLI (agregar el upstream una sola vez):**
+
+```bash
+git remote add upstream https://github.com/rodriguezemautn/goys-2026-tp-vulnerabilidades.git
+git fetch upstream
+git checkout main
+git merge upstream/main
+git push origin main
+git checkout grupo-XX
+git merge main
+git push origin grupo-XX
+```
+
+- Usá `merge`, no `rebase`: no reescribís la historia ni necesitás `force-push`.
+- Si el PR ya está abierto, el push a `grupo-XX` lo actualiza.
+- Los cambios del upstream son en `docs/`, `recursos/` y `README.md`: no deberían
+  tocar `entregables/grupo-XX/`.
+- Si ya agregaste el upstream antes, salteá el `git remote add`.
+
 ---
 
 ## 3. Qué tenés que entregar
