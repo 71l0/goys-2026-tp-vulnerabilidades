@@ -9,9 +9,9 @@ Marcá cada ítem antes de abrir el PR.
 - [x] Cloné el **fork del grupo** y creé/uso la rama `grupo-XX`.
 - [x] Copié `entregables/plantilla.md` a `entregables/grupo-XX/entrega.md`.
 - [x] Todos los integrantes aparecen con nombre, usuario de GitHub y rol.
-- [ ] Cada integrante tiene al menos un commit con su usuario de GitHub.
-- [ ] Los commits son convencionales y por aporte.
-- [ ] El repo no contiene claves, tokens, `.env` ni `secret.yml`.
+- [x] Cada integrante tiene al menos un commit con su usuario de GitHub.
+- [x] Los commits son convencionales y por aporte.
+- [x] El repo no contiene claves, tokens, `.env` ni `secret.yml`.
 
 ## Laboratorio
 
@@ -24,19 +24,19 @@ Marcá cada ítem antes de abrir el PR.
 
 ## Entregables
 
-- [ ] `entrega.md` con inventario, matriz, cambios, contención y conclusión.
+- [x] `entrega.md` con inventario, matriz, cambios, contención y conclusión.
 - [x] `deteccion.md` con hipótesis, hallazgos, regla y limitaciones.
 - [x] `informe.md` individual, 2–3 páginas.
 - [x] Capturas o salidas referenciadas (si usaste `capturas/`).
-- [ ] No hay texto “pendiente”, “TODO” o placeholders.
-- [ ] Las tablas están completas y se entienden sin abrir el lab.
+- [x] No hay texto “pendiente”, “TODO” o placeholders.
+- [x] Las tablas están completas y se entienden sin abrir el lab.
 
 ## Evidencia
 
-- [ ] Cada afirmación técnica tiene un comando, una salida o una captura.
-- [ ] Se distingue “probado” de “planeado”.
-- [ ] Se declara lo que no se pudo probar y por qué.
-- [ ] El change log incluye reversión.
+- [x] Cada afirmación técnica tiene un comando, una salida o una captura.
+- [x] Se distingue “probado” de “planeado”.
+- [x] Se declara lo que no se pudo probar y por qué.
+- [x] El change log incluye reversión.
 
 ## Entrega
 

@@ -70,3 +70,12 @@ Las demás líneas (`apache2`→`apache2`, `node`→`node`, `python`→`python`)
 - **Ruido:** las líneas repetitivas de `apache2`/`node`/`python` ocupan la mayor parte del log y dificultan la lectura manual.
 - **Sin telemetría de red ni de archivos:** no hay datos de conexiones, DNS ni archivos creados, por lo que no se puede confirmar persistencia ni exfiltración.
 - **`detectar.sh` solo muestra el primer nivel de hijos** (filtra por `ppid_comm` de aplicación), por lo que no muestra `id` ni `uname`, que son nietos (hijos de `sh`); hay que leer el log completo para verlos.
+
+---
+
+## 6. Qué no se pudo probar
+
+- Si las descargas hacia `198.51.100.7` y `198.51.100.9` llegaron a completarse: el log no registra el resultado de red.
+- Cuál fue la petición de entrada que disparó la ejecución: no hay logs HTTP ni IP de origen.
+- Que `audit.log` (sintético, provisto por la cátedra) corresponda a los contenedores reales del laboratorio: `docker top` muestra procesos normales (`apache2`, `node`, `python`) sin shells ni descargas.
+- Que la regla de Node.js dispare en un motor de detección real: se razonó sobre el log, no se implementó.

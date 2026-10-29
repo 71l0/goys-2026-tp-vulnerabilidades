@@ -20,8 +20,8 @@
 | Activo | Versión | ¿Expuesto a Internet? | ¿Procesa contenido no confiable? | ¿Afectado? | Evidencia | Justificacion |
 |--------|---------|:---------------------:|:--------------------------------:|:----------:|-----------|---------------|
 | Portal PHP | PHP 8.3.35 | No (80/tcp) | Si* | Si | Inventario PHP; contenedor php-lab, puerto interno 80/tcp, sin publicación visible en Docker.| PHP 8.3.35 es anterior a la versión corregida 8.3.36 para PHP2Shell.|
-| API Node.js | Node.js 22.23.3 | No (8000/tcp) | Si* | Si | Inventario Node.js; contenedor node-lab, puerto interno 3000/tcp, sin publicación visible en Docker.| Node.js 22.23.3 es anterior a 22.23.4, que corrige CVE-2026-111497.|
-| Servicio Python | Python 3.11.18 | No (3000/tcp) | Si* | Si | Inventario Python; contenedor py-lab, puerto interno 8000/tcp, sin publicación visible en Docker.| Brotli 1.0.9 está dentro del rango vulnerable de CVE-2026-111497; falta confirmar que el servicio utiliza ese decoder para descomprimir entradas no confiables.|
+| API Node.js | Node.js 22.23.3 | No (3000/tcp) | Si* | Si | Inventario Node.js; contenedor node-lab, puerto interno 3000/tcp, sin publicación visible en Docker.| Node.js 22.23.3 es anterior a 22.23.4, que corrige CVE-2026-111497.|
+| Servicio Python | Python 3.11.18 | No (8000/tcp) | Si* | Si | Inventario Python; contenedor py-lab, puerto interno 8000/tcp, sin publicación visible en Docker.| Brotli 1.0.9 está dentro del rango vulnerable de CVE-2026-111497; `py-lab/app.py` descomprime con `brotli.decompress` los cuerpos POST con `Content-Encoding: br`, por lo que el servicio sí usa el decoder con entradas no confiables.|
 
 (La evidencia de los valores se encuentran en [`/capturas/tramo_1_inventario`](./capturas/tramo_1_inventario/))
 
@@ -47,7 +47,7 @@ En consecuencia, los tres servicios se consideran no expuestos directamente a In
 | API Node.js | Media (brotli / runtime) | No confirmada | No — red interna del laboratorio | Media | Parchear a Node 22.23.4 en el día; revisar dependencias brotli |
 | Servicio Python | Media (brotli 1.0.9 → 1.2.1) | No confirmada | No — red interna del laboratorio | Media | Actualizar a Python con brotli 1.2.1 en el día |
 
-**Justificación:** el Portal PHP es el activo más crítico porque `session.upload_progress.enabled=1` es explotable para RCE en versiones anteriores a 8.3.36, y el inventario confirmó que el valor estaba en `1`. Se prioriza la mitigación inmediata (deshabilitar el progreso de subida) y el parche de versión el mismo día. Node y Python se tratan con menor prioridad por no tener explotación real confirmada en el entorno y por estar en red aislada, pero se parchean igual para reducir superficie. La evidencia nueva que cambiaría la decisión sería confirmar exposición pública de alguno de los servicios (puertos publicados en `docker-compose.yml`), lo que subiría la criticidad de todos.
+**Justificación:** el Portal PHP es el activo más crítico porque `session.upload_progress.enabled=1` es explotable para RCE en versiones anteriores a 8.3.36, y el estado inicial del laboratorio (`laboratorio/php/php.ini` antes del commit `524c95f`) tenía el valor en `1`; el inventario actual ya muestra `0` porque la mitigación se aplicó el 28/10. Se prioriza la mitigación inmediata (deshabilitar el progreso de subida) y el parche de versión el mismo día. Node y Python se tratan con menor prioridad por no tener explotación real confirmada en el entorno y por estar en red aislada, pero se parchean igual para reducir superficie. La evidencia nueva que cambiaría la decisión sería confirmar exposición pública de alguno de los servicios (puertos publicados en `docker-compose.yml`), lo que subiría la criticidad de todos.
 
 ---
 
@@ -55,12 +55,16 @@ En consecuencia, los tres servicios se consideran no expuestos directamente a In
 
 | Fecha/hora | Activo | Cambio | Antes | Después | Reversión |
 |------------|--------|--------|-------|---------|-----------|
-| 29/10/2026 — Fase 4 | Portal PHP | Mitigación `session.upload_progress.enabled` | `1` | `0` | `git checkout -- laboratorio/php/php.ini` y `docker compose restart php-lab` |
-| 29/10/2026 — Fase 4 | Portal PHP | Parche de versión | PHP 8.3.35 | PHP 8.3.36 | Volver a tag anterior con `PHP_TAG` en `versions.env` y `docker compose up` |
-| 29/10/2026 — Fase 4 | API Node.js | Parche de versión | Node v22.23.3 | Node v22.23.4 | Volver a tag anterior con `NODE_TAG` en `versions.env` |
-| 29/10/2026 — Fase 4 | Servicio Python | Parche de versión (brotli) | brotli 1.0.9 | brotli 1.2.1 | Volver a tag anterior de imagen Python |
+| 28/10/2026 15:25 (commit `524c95f`) | Portal PHP | Mitigación `session.upload_progress.enabled` | `1` | `0` | `git revert 524c95f` (o volver la directiva a `1` en `php.ini`) y `docker compose restart php-lab` |
+| 29/10/2026 (`./scripts/parchear.sh`) | Portal PHP | Parche de versión | PHP 8.3.35 | PHP 8.3.36 | Volver a tag anterior con `PHP_TAG` en `versions.env` y `docker compose up` |
+| 29/10/2026 (`./scripts/parchear.sh`) | API Node.js | Parche de versión | Node v22.23.3 | Node v22.23.4 | Volver a tag anterior con `NODE_TAG` en `versions.env` |
+| 29/10/2026 (`./scripts/parchear.sh`) | Servicio Python | Parche de versión (brotli) | brotli 1.0.9 | brotli 1.2.1 | Volver a tag anterior de imagen Python |
 
-**Prueba funcional mínima:** `docker compose exec -T php-lab php -r 'echo ini_get("session.upload_progress.enabled");'` devolvió `0`, y `docker compose ps` muestra `php-lab`, `node-lab` y `py-lab` en estado `healthy`/`running`.
+**Prueba funcional mínima:** después del parche, `docker compose ps` muestra `php-lab` (8.3.36), `node-lab` (22.23.4) y `py-lab` (brotli 1.2.1) en estado `healthy`; además, una petición `GET /` devolvió una respuesta válida en los tres (PHP 1093 bytes, Node HTTP 200, Python HTTP 200) y `ini_get("session.upload_progress.enabled")` devolvió `0`. Capturas en [`/capturas/tramo_2_cambiosyParche`](./capturas/tramo_2_cambiosyParche/).
+
+**Nota sobre Node:** el inventario sigue informando `brotli 1.1.0` después del parche porque el decoder lo aporta el runtime; el parche de Node cambia la versión del runtime (22.23.3 → 22.23.4), pero el script no muestra un cambio en `process.versions.brotli`, por lo que no se afirma que esa versión haya cambiado.
+
+**Probado vs planeado:** *probado* en el laboratorio: inventario antes y después del parche, mitigación de PHP, `parchear.sh`, respuesta de los 3 servicios, `SIN SALIDA` en los 3 y la caza sobre `audit.log`. *Planeado y no aplicado*: rechazo de `Content-Encoding: br` en el borde o la app, y la regla de detección para Node.js (se razonó sobre el log, no se cargó en un motor de detección).
 
 **Qué no se pudo probar:** Acceso real desde red externa (no hay salida a Internet ni proxy público en el laboratorio isolado), por lo que no se validó exposición a Internet ni ataque activo contra el puerto publicado.
 
@@ -178,7 +182,7 @@ SIN SALIDA URLError
 - [x] Al menos 3 controles de contención probados.
 - [x] `deteccion.md` completo.
 - [x] `informe.md` individual completo.
-- [ ] Sin claves, tokens ni placeholders.
+- [x] Sin claves, tokens ni placeholders.
 - [ ] Repo pusheado y PR abierto.
 
 Checklist completa: [`../docs/checklist-entrega.md`](../docs/checklist-entrega.md).

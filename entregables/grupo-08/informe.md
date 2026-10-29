@@ -28,7 +28,7 @@ Se aplicó la siguiente priorización (matriz en `entrega.md`, sección 2):
 2. **API Node.js (Media):** Parche a Node v22.23.4 con `./scripts/parchear.sh`. Revisar dependencias con brotli.
 3. **Servicio Python (Media):** Actualización a Python 3.11.18 con brotli 1.2.1 mediante `./scripts/parchear.sh`.
 
-**Reversión documentada:** `git checkout -- laboratorio/php/php.ini` y volver a tags anteriores con `PHP_TAG`/`NODE_TAG` en `versions.env`.
+**Reversión documentada:** `git revert 524c95f` (commit que puso la directiva en `0`) y volver a tags anteriores con `PHP_TAG`/`NODE_TAG` en `versions.env`.
 
 ## 3. Indicadores de compromiso (IoC)
 
@@ -96,7 +96,7 @@ Se ejecutó un plan en tres pasos, priorizando la reducción inmediata de superf
 
 | Acción | Activo | Plazo | Dueño | Reversión |
 |--------|--------|-------|-------|-----------|
-| 1. Mitigación en configuración (`session.upload_progress.enabled = 0` en `php.ini` y reinicio) | Portal PHP (`php-lab`) | Inmediato (primeros 15 min) | Cambios / Parche | `git checkout -- laboratorio/php/php.ini` y `docker compose restart php-lab` |
+| 1. Mitigación en configuración (`session.upload_progress.enabled = 0` en `php.ini` y reinicio) | Portal PHP (`php-lab`) | Inmediato (primeros 15 min) | Cambios / Parche | `git revert 524c95f` (vuelve la directiva a `1`) y `docker compose restart php-lab` |
 | 2. Verificación de controles de contención (`./scripts/verificar-contencion.sh`) | `php-lab`, `node-lab`, `py-lab` | Inmediato (primeros 30 min) | Contención / Comunicación | Ajustar directiva en `docker-compose.yml` y recrear el servicio |
 | 3. Parcheo de versiones a PHP 8.3.36, Node v22.23.4 y brotli 1.2.1 (`./scripts/parchear.sh`) | `php-lab`, `node-lab`, `py-lab` | En el día | Cambios / Parche | Volver a tags anteriores con `PHP_TAG` / `NODE_TAG` en `versions.env` y `docker compose up` |
 
