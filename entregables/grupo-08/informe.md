@@ -153,8 +153,97 @@ Frente a una vulnerabilidad nueva como **CVE-2026-115560** (por ejemplo, un defe
 
 # Informe individual — TP PHP2Shell / Node2Shell
 
-**Integrante:** -
-**Usuario de GitHub:** -
-**Rol en el TP:** -
-**Fecha:** -
+**Integrante:** _Sofia Raggi_ 
+**Usuario de GitHub:** _71l0_
+**Rol en el TP:** _Inventario_
+**Fecha:** 28/10/2026
 **Grupo:** 08
+
+## 1. Situación y riesgo
+
+En la primera parte de la experiencia se realizó el inventario inicial de los tres servicios desplegados en Docker: un portal PHP, una API Node.js y un servicio Python. El objetivo fue identificar las versiones instaladas, las dependencias relevantes y las condiciones de exposición para aportar información verificable a la evaluación de riesgos del equipo.
+
+El análisis se basa en dos incidentes de seguridad: PHP2Shell (CVE-2026-109618 y CVE-2026-109619), relacionado con ejecución remota de código en PHP, y Node2Shell / HTTP2Shell (CVE-2026-111497), asociado a una escritura fuera de límites en el decoder Brotli.
+
+El inventario inicial obtenido mediante `./scripts/inventario.sh` registró los siguientes resultados:
+
+| Activo | Versión inicial | Hallazgo principal | Evaluación inicial |
+|---|---|---|---|
+| Portal PHP (`php-lab`) | PHP 8.3.35 | `session.upload_progress.enabled = 1` | Prioridad alta de revisión y mitigación |
+| API Node.js (`node-lab`) | Node.js 22.23.3 | Brotli 1.1.0 aportado por el runtime | Requiere actualización y validación del decoder |
+| Servicio Python (`py-lab`) | Python 3.11.18 | Paquete Brotli 1.0.9 | Requiere verificar la dependencia y actualizarla |
+
+La evidencia complementaria obtenida con `docker ps --format "table {{.Names}}\t{{.Ports}}"` mostró los puertos internos 80/tcp, 3000/tcp y 8000/tcp, sin publicaciones explícitas en el host, indicando asi, que los servicios no están publicados a Internet y que el laboratorio utiliza una red interna aislada.
+
+Este supuesto limita la exposición directa, pero se tiene que considerar que no elimina la vulnerabilidad de los componentes ni los riesgos asociados con un eventual compromiso desde otro servicio de la red. Además, tambien se debe reevaluar si se incorpora un proxy inverso, se publican puertos o cambia la arquitectura.
+
+Por esta razon, la principal conclusión de esta etapa es que el inventario permite **identificar componentes que requieren atención prioritaria y establecer una línea de base para comprobar posteriormente las mitigaciones y actualizaciones**.
+
+## 2. Plan priorizado	
+
+A partir de los hallazgos, se propuso organizar la respuesta en tres niveles de intervención:
+
+| Prioridad | Activo | Acción propuesta | Evidencia requerida |
+|---|---|---|---|
+| Alta | Portal PHP | Deshabilitar temporalmente `session.upload_progress.enabled` si corresponde al escenario vulnerable y actualizar PHP a una versión corregida | Configuración anterior y posterior, versión final y verificación de la directiva |
+| Media | API Node.js | Actualizar Node.js a una versión corregida y revisar el uso de Brotli | Versión del runtime y resultado de las pruebas posteriores |
+| Media | Servicio Python | Verificar el paquete Brotli y actualizarlo a una versión corregida compatible | Versión del paquete antes y después y comprobación de la dependencia utilizada |
+
+Las prioridades indicadas son iniciales y deben validarse con la matriz de riesgo del grupo y los avisos oficiales de los proveedores. En particular, no debe confundirse la versión del runtime con la versión de una dependencia que pueda estar incorporada en él.
+
+_Para PHP se identificó la versión **8.3.35**, que debe contrastarse con la versión correctiva indicada en el aviso oficial. Para Node.js se registró la versión **22.23.3**, mientras que para Python se detectó Brotli **1.0.9**. La actualización definitiva debe comprobarse mediante el inventario posterior al cambio, no únicamente por la ejecución satisfactoria del script de parcheo._
+
+El objetivo principal consiste en: **mantener actualizados los datos de los activos, registrar las versiones iniciales y finales y aportar evidencia para que el equipo determine si las acciones implementadas resolvieron la exposición al componente vulnerable**.
+
+Toda modificación se deberá documentar el estado anterior y posterior, los comandos ejecutados, las evidencias obtenidas y el procedimiento de reversión. 
+
+## 3. Indicadores de compromiso	
+
+El inventario de versiones debe complementarse con el análisis de registros para determinar si los componentes identificados presentan alguna actividad anómala. En este sentido, los registros de procesos pueden aportar información clave sobre la ejecución de comandos por parte de servicios web y aplicaciones.
+
+Entre los patrones que deben investigarse se encuentran:
+
+- Procesos de servidores web que generan shells, como `apache2 → sh`.
+- Procesos de Node.js que generan shells o herramientas de descarga.
+- Procesos de Python que ejecutan comandos del sistema sin una justificación operativa.
+- Intentos de descarga de archivos desde direcciones externas.
+
+Desde la perspectiva del inventario, **la correlación entre los activos, las versiones y los hallazgos de detección permiten establecer qué servicio requiere investigación prioritaria**. Sin embargo, el inventario no confirma por sí mismo que haya existido explotación.
+
+Entre las limitaciones que deben documentarse se encuentran la _ausencia de información sobre el usuario de origen, la falta de una IP de origen de la petición HTTP y la imposibilidad de determinar el resultado de una operación de red_ únicamente a partir de ciertos registros de procesos.
+
+## 4. Transferencia
+
+Como ejemplo de transferencia, se considera la **vulnerabilidad hipotética CVE-2026-115560**, la cual corresponde a un defecto en un motor de plantillas de Node.js que permitiría inyección de comandos mediante cabeceras HTTP manipuladas. Este escenario es ilustrativo y no se presenta como un aviso de seguridad verificado.
+
+La **primera medida** sería identificar los activos que utilizan el motor de plantillas afectado y registrar su versión. Seguido, se debería determinar si las aplicaciones reciben cabeceras controladas por usuarios o sistemas externos y si esas entradas llegan al componente vulnerable.
+
+La priorización seria a partir de la criticidad del activo, la versión instalada, la exposición de la aplicación y la posibilidad de reducir el riesgo mediante configuración. Si existiera el caso de una mitigación temporal segura, se podría aplicar mientras se prepara la actualización definitiva.
+
+Lo que se debe entender de este caso, es que un inventario actualizado permite responder con mayor rapidez ante nuevas vulnerabilidades y facilita el verificar que las medidas correctivas se hayan aplicado efectivamente.
+
+## 5. Lecciones aprendidas
+
+1. **El inventario es la base de la respuesta a incidentes.** El registrar los componentes, las versiones y las dependencias permite identificar los activos que requieren intervención y evita tomar decisiones basadas únicamente en suposiciones.
+
+2. **La exposición y la vulnerabilidad son condiciones diferentes.** Que los contenedores no publiquen puertos a Internet reduce la exposición directa, pero no elimina la necesidad de corregir componentes vulnerables.
+
+3. **Las versiones deben verificarse después del parcheo.** La ejecución de un script no garantiza del todo que el componente vulnerable haya sido actualizado, por lo tanto es necesario obtener evidencia posterior al cambio.
+
+4. **La información debe ser trazable.** Registrar comandos, resultados, configuraciones y fuentes oficiales para facilitar la revisión de lo realizado.
+
+5. **Los resultados negativos y las limitaciones también importan.** Si no se pudo verificar un endpoint, una ruta de acceso o una condición de procesamiento, debe quedar expresamente documentado.
+
+6. **La comunicación debe centrarse en el impacto.** Para gerencia, los resultados del inventario deben traducirse en decisiones: qué activos requieren atención, qué medidas se recomiendan y qué incertidumbres continúan pendientes.
+
+## 6. Qué no se pudo probar
+
+El inventario inicial permitió registrar las versiones de los runtimes y de Brotli, además de identificar la ausencia de publicaciones explícitas de puertos en la salida de Docker. Pero, estas evidencias no permiten afirmar por sí solas que se hayan descartado todas las vías de acceso externo.
+
+Por lo tanto, en las siguientes comprobaciones se debe considerar confirmar:
+
+- La inexistencia de un proxy inverso u otra ruta de exposición externa, más allá del supuesto establecido por la consigna.
+- El procesamiento efectivo de contenido no confiable en cada aplicación.
+- La explotación activa de las vulnerabilidades, que no se realizó porque la práctica es estrictamente defensiva.
+- La corrección definitiva de todos los componentes, hasta contar con el inventario posterior al parcheo.
+- La ausencia total de compromiso, que requiere revisar los registros y otras evidencias disponibles.
