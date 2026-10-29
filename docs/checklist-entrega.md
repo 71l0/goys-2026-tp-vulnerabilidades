@@ -18,16 +18,16 @@ Marcá cada ítem antes de abrir el PR.
 - [x] `./scripts/arrancar-2h.sh` levanta los 3 servicios `healthy`.
 - [x] `./scripts/inventario.sh` muestra las versiones reales.
 - [x] `./scripts/parchear.sh` aplica las versiones corregidas.
-- [ ] La prueba funcional mínima pasa después del parche.
-- [ ] `./scripts/verificar-contencion.sh` muestra `SIN SALIDA` en los 3 servicios.
-- [ ] El laboratorio quedó apagado (`docker compose down -v`).
+- [x] La prueba funcional mínima pasa después del parche.
+- [x] `./scripts/verificar-contencion.sh` muestra `SIN SALIDA` en los 3 servicios.
+- [x] El laboratorio quedó apagado (`docker compose down -v`).
 
 ## Entregables
 
 - [ ] `entrega.md` con inventario, matriz, cambios, contención y conclusión.
-- [ ] `deteccion.md` con hipótesis, hallazgos, regla y limitaciones.
-- [ ] `informe.md` individual, 2–3 páginas.
-- [ ] Capturas o salidas referenciadas (si usaste `capturas/`).
+- [x] `deteccion.md` con hipótesis, hallazgos, regla y limitaciones.
+- [x] `informe.md` individual, 2–3 páginas.
+- [x] Capturas o salidas referenciadas (si usaste `capturas/`).
 - [ ] No hay texto “pendiente”, “TODO” o placeholders.
 - [ ] Las tablas están completas y se entienden sin abrir el lab.
 

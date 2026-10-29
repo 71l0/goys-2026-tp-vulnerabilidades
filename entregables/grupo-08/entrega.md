@@ -110,7 +110,7 @@ brotli 1.2.1
 
 **Limitaciones del log:** no registra usuario, IP de origen ni resultado de los comandos; cubre ~10 minutos; sin telemetría de red ni archivos; `detectar.sh` solo muestra hijos directos de la app y omite `id` y `uname`.
 
-Detalle completo en [`deteccion.md`](./deteccion.md).
+Evidencia: [`capturas/tramo_3_deteccion/`](./capturas/tramo_3_deteccion/) (salida de `./scripts/detectar.sh`). Detalle completo en [`deteccion.md`](./deteccion.md).
 
 ---
 
@@ -176,8 +176,8 @@ SIN SALIDA URLError
 - [x] Matriz con decisión y plazo.
 - [x] Parche aplicado y verificado; reversión documentada.
 - [x] Al menos 3 controles de contención probados.
-- [ ] `deteccion.md` completo.
-- [ ] `informe.md` individual completo.
+- [x] `deteccion.md` completo.
+- [x] `informe.md` individual completo.
 - [ ] Sin claves, tokens ni placeholders.
 - [ ] Repo pusheado y PR abierto.
 

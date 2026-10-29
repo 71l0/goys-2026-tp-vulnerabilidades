@@ -26,6 +26,8 @@ grep -E 'ppid_comm=(apache2|php-fpm|node|python)' logs/audit.log | grep -E 'comm
 | L16 · 2026-10-27T09:45:10Z | svc01 | `python` → `sh -c uname -a` (luego `sh` → `uname`, L17) | Sí | Reconocimiento del sistema lanzado desde el proceso de la aplicación. |
 | L8, L13, L21 · 09:42:40Z, 09:44:10Z, 09:49:00Z | db01 | `sshd` → `bash` (`-bash`) | No (probable) | Sesión SSH interactiva; ver sección 3. |
 
+Evidencia: salida de `./scripts/detectar.sh` en [`capturas/tramo_3_deteccion/detectar-hijos-sospechosos.png`](./capturas/tramo_3_deteccion/detectar-hijos-sospechosos.png) (las 4 líneas L6, L9, L14 y L16).
+
 Las demás líneas (`apache2`→`apache2`, `node`→`node`, `python`→`python`) son procesos del servicio con el mismo nombre que el padre, es decir, funcionamiento normal.
 
 **¿Hay compromiso?** **Sí** en `web01`, `api01` y `svc01`, con evidencia de ejecución de comandos en los tres (L6, L9, L14, L16). **Indeterminado** si las descargas llegaron a completarse: el log solo muestra el lanzamiento del proceso, no su resultado de red. Con la red `labnet` en `internal: true` (`SIN SALIDA` en la verificación de contención), el laboratorio impediría que se completen. El log, en cambio, es sintético y no prueba qué pasó en los contenedores reales.
