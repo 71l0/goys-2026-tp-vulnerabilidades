@@ -23,7 +23,7 @@
 | API Node.js | Node.js 22.23.3 | No (8000/tcp) | Si* | Si | Inventario Node.js; contenedor node-lab, puerto interno 3000/tcp, sin publicación visible en Docker.| Node.js 22.23.3 es anterior a 22.23.4, que corrige CVE-2026-111497.|
 | Servicio Python | Python 3.11.18 | No (3000/tcp) | Si* | Si | Inventario Python; contenedor py-lab, puerto interno 8000/tcp, sin publicación visible en Docker.| Brotli 1.0.9 está dentro del rango vulnerable de CVE-2026-111497; falta confirmar que el servicio utiliza ese decoder para descomprimir entradas no confiables.|
 
-(La evidencia de los valores se encuentran en [`/capturas/tramo_1`](./capturas/tramo_1/))
+(La evidencia de los valores se encuentran en [`/capturas/tramo_1_inventario`](./capturas/tramo_1_inventario/))
 
 **Supuestos de exposición:** _¿qué asumieron sobre el proxy, la red y el despliegue?_
 
